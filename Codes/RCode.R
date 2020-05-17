@@ -32,11 +32,12 @@ plot(mydf, col="lightblue", lwd=2, main = "Washington State (US)
 Percent_uninsured_from_census<- read.csv(file = "Percent_uninsured_from_census.csv", na.strings = c("", "NA"))
 head(Percent_uninsured_from_census)
 Percent_uninsured <- Percent_uninsured_from_census %>%
-  filter(state=="53")
+  filter(state=="53") 
 
-mydf2 <- merge(x = Washington, y = Percent_uninsured , by ="GEOID_ID",  all=T)
-class(Washington$GEO_ID)
-class(Percent_uninsured$GEOID_ID)
+Percent_uninsured$NAME <- gsub(" County, WA" , "", Percent_uninsured$NAME)
+Percent_uninsured$PCTUI_PTnum <- as.numeric(as.character(Percent_uninsured$PCTUI_PT))
+mydf2 <- sp::merge(Washington, Percent_uninsured , by ="NAME",  all=T)
+
 ## Income data 2017
 library(readxl)
 
@@ -123,15 +124,23 @@ MMM <- MM %>% addResetMapButton() %>%
 MMM
 saveWidget(MMM, file = "C:\\Users\\wilso\\Documents\\GitHub\\COVID-19-strategic-feasibility-support\\Outputs\\New York example.html")
 
+pal3 <- colorNumeric(palette = "RdYlBu", domain =c(0:15), reverse = TRUE)
 
 
-MM <- m %>% addPolygons(data = mydf, weight=1, fillOpacity = 0.75,
+MM <- m %>% addPolygons(data = mydf, weight=1, fillOpacity = 0.45,
                         color = pal(mydf$All),
                         label = mydf$NAME,
                         popup = paste0("Percent HPV vaccine UtD: ", 
                                        mydf$All, "%"),
                         labelOptions = labelOptions(textOnly = FALSE),
                         group = "County HPV vaccination") %>%
+  addPolygons(data = mydf2, weight=1, fillOpacity = 0.45,
+              color = pal3(Percent_uninsured$PCTUI_PTnum),
+              label = mydf2$NAME,
+              popup = paste0("Percent Uninsured: ", 
+                             Percent_uninsured$PCTUI_PTnum, "%"),
+              labelOptions = labelOptions(textOnly = FALSE),
+              group = "County Uninsured") %>%
   addCircleMarkers(lng = myWashIRS$longitude,
                    lat = myWashIRS$latitude,
                    label = myWashIRS$PlaceName,
@@ -146,7 +155,7 @@ MM <- m %>% addPolygons(data = mydf, weight=1, fillOpacity = 0.75,
                    group = "IRS tax data by zip",
                    clusterOptions = markerClusterOptions())%>% 
   
-  addLayersControl(overlayGroups = c("County HPV vaccination", "IRS tax data by zip"))
+  addLayersControl(overlayGroups = c("County HPV vaccination", "IRS tax data by zip", "County Uninsured"))
 
 MMM <- MM %>% addResetMapButton() %>%
   addLegend(title = "Vaccination rates", 
@@ -156,7 +165,11 @@ MMM <- MM %>% addResetMapButton() %>%
   addLegend(title = "Avg annual income", 
             position = "bottomright",
             pal=pal2,
-            values = c(0:150))
+            values = c(0:150))%>%
+  addLegend(title = "Percent uninsured", 
+            position = "topleft",
+            pal=pal3,
+            values = c(0:15))
 MMM
 
 saveWidget(MMM, file = "/Users/andywilson1/Documents/GitHub/Olivia-DIA/Output/Prototype Washington map v0.1.html")
