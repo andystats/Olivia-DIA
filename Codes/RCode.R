@@ -3,9 +3,30 @@ library(dplyr)
 library(leaflet)
 library(leaflet.extras)
 library(htmlwidgets)
+library(gstat)
+library(sp) 
+#library(maptools)
 
 #MAC AW
-setwd("/Users/andywilson1/Documents/GitHub/Olivia-DIA")
+#setwd("/Users/andywilson1/Documents/GitHub/Olivia-DIA")
+#PC AW
+setwd("C:/Users/wilso/Documents/GitHub/Olivia-DIA")
+
+## Centralizing in Washington state (square boundaries)
+
+lat_min = 45.5
+lat_max = 49
+lon_max = -116.7 
+lon_min = -124.7
+
+## Import prevalence data 
+
+prev <- read.csv(file = "External data/ZIP3_XY_HPV_SCREEN_2019_SLIM.csv", na.strings = c("", "NA"))
+Wash_prev <- prev %>%
+  filter(Longitude_avg >=  -124.46) %>%
+  filter(Longitude_avg <=  -116.55) %>%
+  filter(Latitude_avg  >=  45.33) %>%
+  filter(Latitude_avg  <=  49)
 
 #get the list of states from us_state_polygons.json
 states <- geojsonio::geojson_read("us_state_polygons.json", what = "sp")
@@ -19,15 +40,21 @@ counties<- geojsonio::geojson_read("us_county_polygons.json", what = "sp")
 
 Washington <- subset(counties, STATE == "53")
 
+
+
 ## HPV vaccination coverage in 2018 
-WV2018<- read.csv(file = "HPV Data/HPV vaccine/Washington_2018_analysis.csv", na.strings = c("", "NA"))
+WV2018<- read.csv(file = "HPV Data/HPV vaccine/Washington_2018_analysis.csv", na.strings = c("", "NA"), fileEncoding="UTF-8-BOM")
 
 WV2018 <- WV2018 %>%
   rename(NAME = Geography)
 
+
+
 mydf<- sp::merge(Washington, WV2018 , by="NAME", all=T)
 plot(mydf, col="lightblue", lwd=2, main = "Washington State (US)
-     Counties")
+     grid for Kriging")
+abline(h=c(lat_max, lat_min), lty=2, lwd=2, col="blue")
+abline(v=c(lon_max, lon_min), lty=2, lwd=2, col="blue")
 
 Percent_uninsured_from_census<- read.csv(file = "Percent_uninsured_from_census.csv", na.strings = c("", "NA"))
 head(Percent_uninsured_from_census)
@@ -72,8 +99,7 @@ head(myWashIRS)
   ## Ordinary Kriging 
  ### Concept and method 
 
-library(gstat)
-library(sp) 
+
 
 
 

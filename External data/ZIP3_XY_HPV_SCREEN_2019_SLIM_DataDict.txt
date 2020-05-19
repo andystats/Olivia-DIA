@@ -1,0 +1,29 @@
+Dataset: ZIP3_XY_HPV_SCREEN_2019_SLIM.csv  (comma separeted values format)
+~~~~~~~
+
+Description: 
+~~~~~~~~~~~
+Counts of female patients with records for HPV screening in 2019 and among them counts of HPV positive. The query was performed by PDH (Thomas), on SUMMA platform against two data sources: MedClaim and EMR_DIag.
+
+variables: 
+~~~~~~~~~
+zip3 			- First 3 digits of ZIP code, this is the most granular level available in SUMMA.
+
+Longitude_avg		- Average Longitude of all US ZIP codes with first 3 digits equal value in 'zip3'. 
+
+Latitude_avg		- Average Latitude of all US ZIP codes with first 3 digits equal value in 'zip3'.
+
+n_screened		- Number of females that have at least one record for HPV screening during 
+			  2019/01/01  - 2019/12/31 time period (ICD10 code: Z11.51 – Encounter for screening for HPV).
+
+n_positive		- Number of females from column 2 (above) that have a diagnosis of HPV during 
+			  2019/01/01  - 2019/12/31 time period (ICD10 codes: R87.81*, R87.2*).
+
+positivity		- Percent of screened patients with positive results.
+
+
+Notes: 
+~~~~~
+1.	The data sources used do not provide full coverage of the screening facts for the zip3 
+geographical area, therefore, only the ratio can be used for inference of the positivity rates in the area. 
+2.	The average values of Longitude and Latitude were calculated based on 2018 ODS dataset: https://public.opendatasoft.com/explore/dataset/us-zip-code-latitude-and-longitude/information/
