@@ -14,11 +14,12 @@ setwd("C:/Users/wilso/Documents/GitHub/Olivia-DIA")
 
 ## Centralizing in Washington state (square boundaries) 
 ## Note: it is possible to create grids with irregular boundaries, but this is close enough for Wash. state
+bbox(mydf)
 
-lat_min = 45.5
-lat_max = 49
-lon_max = -116.85 
-lon_min = -124.75
+lat_min = 45.54354
+lat_max = 49.00249
+lon_max = -116.91599 
+lon_min = -124.73317
 
 ## Import positivity data 
 
@@ -61,11 +62,12 @@ WV2018 <- WV2018 %>%
 
 mydf<- sp::merge(Washington, WV2018 , by="NAME", all=T)
 
-
+pdf(file = "Output/Washington bounding box for Kriging.pdf")
 plot(mydf, col="lightblue", lwd=2, main = "Washington State (US)
      grid for Kriging")
 abline(h=c(lat_max, lat_min), lty=2, lwd=3, col="blue")
 abline(v=c(lon_max, lon_min), lty=2, lwd=3, col="blue")
+dev.off()
 
 Percent_uninsured_from_census<- read.csv(file = "Percent_uninsured_from_census.csv", na.strings = c("", "NA"))
 head(Percent_uninsured_from_census)
@@ -104,6 +106,8 @@ head(WashIRS)
 myWashIRS <- merge(ZipCodes, WashIRS, by="zip", all=T)
   #Rename Adjusted income:
 myWashIRS$AdjInc <- myWashIRS$`AVG ADJUSTED GROSS INCOME (IN THOUSANDS OF DOLLARS)`
+myWashIRS <- myWashIRS %>%
+  drop_na(AdjInc)
 summary(myWashIRS$AdjInc)
 
 # Clustering and polygons and interactivity 
@@ -114,12 +118,62 @@ summary(myWashIRS$AdjInc)
  ### Concept and method 
 
 
+#Kriging for vaccination rates
+
+#fitting variogram 
+
+pct.vgm <- variogram(PCTUI_PTnum ~1, mydf2)
+pct.fit <- fit.variogram(pct.vgm, model=vgm(1, "Sph"))
+
+pdf(file = "Output/Variogram vax rates.pdf", width=10)
+plot(pct.vgm, pct.fit)
+dev.off()
+
+## Generate grid to perform generative Kriging 
+
+grd <- makegrid(mydf2, n=100000) 
+#colnames(grd) <- c('x', 'y')
+
+grd_pts <- SpatialPoints(coords = grd, 
+                         proj4string = CRS(proj4string(mydf2)))
+
+grd_pts_in <- grd_pts[mydf2, ]
+
+gdf <- as.data.frame(grd_pts_in)
+
+library(ggthemes)
+
+pdf(file = "Output/Washington grid for Kriging2.pdf", width=10)
+ggplot(gdf) +
+  geom_point(aes(x=x, y=y))+
+  theme_few()
+dev.off()
 
 
+#Computation
 
+pct.kriged <-krige(PCTUI_PTnum ~1, mydf2, grd_pts_in, pct.fit )
 
+pct.kriged.data <- as.data.frame(pct.kriged) 
+head(pct.kriged.data)
 
+pdf(file = "Output/Predicted vaccination rate.pdf", width=10)
+pct.kriged.data %>%
+ggplot(aes(x=x, y=y)) +
+  geom_tile(aes(fill=var1.pred)) + coord_equal() +
+  scale_fill_gradient("Predicted", low="red", high ="blue") +
+  theme_void()
+dev.off()  
 
+pdf(file = "Output/Variance vaccination rate.pdf", width=10)
+pct.kriged.data %>%
+  ggplot(aes(x=x, y=y)) +
+  geom_tile(aes(fill=var1.var)) + coord_equal() +
+  scale_fill_gradient("Variance", low="blue", high ="red") +
+  theme_void()
+dev.off()  
+
+write.csv(pct.kriged.data, "Kriged data.csv")
 
 ################
 ### Overlay maps
@@ -164,8 +218,8 @@ MM <- m %>% addPolygons(data = mydf, weight=1, fillOpacity = 0.45,
                                  " AVG ADJUSTED GROSS INCOME (IN THOUSANDS OF DOLLARS)     = $", round(myWashIRS$AdjInc,2),
                                  "<br/>",
                                  "zip = ", myWashIRS$zip),
-                   radius = myWashIRS$AdjInc,
-                   stroke = TRUE, fillOpacity = 0.5,
+                   radius = myWashIRS$AdjInc/10,
+                   stroke = TRUE, fillOpacity = 0.8,
                    color = pal2(myWashIRS$AdjInc), 
                    group = "IRS tax data by zip",
                    clusterOptions = markerClusterOptions()) %>% 
@@ -191,7 +245,7 @@ MMM <- MM %>% addResetMapButton() %>%
             position = "bottomleft",
             pal=pal,
             values = c(0:45)) %>%
-  addLegend(title = "Avg annual income", 
+  addLegend(title = "Avg annual income (in $1,000s)", 
             position = "bottomright",
             pal=pal2,
             values = c(0:150))%>%
@@ -209,7 +263,7 @@ MMM
 #saveWidget(MMM, file = "/Users/andywilson1/Documents/GitHub/Olivia-DIA/Output/Prototype Washington map v0.1.html")
 
 #PC AW
-saveWidget(MMM, file = "C:/Users/wilso/Documents/GitHub/Olivia-DIA/Output/Prototype Washington map v1.0.html")
+saveWidget(MMM, file = "C:/Users/wilso/Documents/GitHub/Olivia-DIA/Output/Prototype Washington map v1.1.html")
 
 # MM <- m %>% addPolygons(data = mydf, weight=1, fillOpacity = 0.75,
 #                         color = pal(mydf$All),
