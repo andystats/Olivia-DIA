@@ -42,6 +42,10 @@ counties<- geojsonio::geojson_read("us_county_polygons.json", what = "sp")
 
 # Maps of the US (State level)
 
+
+
+
+
 # Maps of Washington state (County level)
 
 Washington <- subset(counties, STATE == "53")
@@ -108,6 +112,7 @@ summary(myWashIRS$AdjInc)
 
   ## Ordinary Kriging 
  ### Concept and method 
+
 
 
 
