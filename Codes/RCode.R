@@ -12,14 +12,16 @@ library(sp)
 #PC AW
 setwd("C:/Users/wilso/Documents/GitHub/Olivia-DIA")
 
-## Centralizing in Washington state (square boundaries)
+## Centralizing in Washington state (square boundaries) 
+## Note: it is possible to create grids with irregular boundaries, but this is close enough for Wash. state
 
 lat_min = 45.5
 lat_max = 49
-lon_max = -116.7 
-lon_min = -124.7
+lon_max = -116.85 
+lon_min = -124.75
 
 ## Import prevalence data 
+
 
 prev <- read.csv(file = "External data/ZIP3_XY_HPV_SCREEN_2019_SLIM.csv", na.strings = c("", "NA"))
 Wash_prev <- prev %>%
@@ -49,12 +51,13 @@ WV2018 <- WV2018 %>%
   rename(NAME = Geography)
 
 
-
 mydf<- sp::merge(Washington, WV2018 , by="NAME", all=T)
+
+
 plot(mydf, col="lightblue", lwd=2, main = "Washington State (US)
      grid for Kriging")
-abline(h=c(lat_max, lat_min), lty=2, lwd=2, col="blue")
-abline(v=c(lon_max, lon_min), lty=2, lwd=2, col="blue")
+abline(h=c(lat_max, lat_min), lty=2, lwd=3, col="blue")
+abline(v=c(lon_max, lon_min), lty=2, lwd=3, col="blue")
 
 Percent_uninsured_from_census<- read.csv(file = "Percent_uninsured_from_census.csv", na.strings = c("", "NA"))
 head(Percent_uninsured_from_census)
@@ -91,7 +94,10 @@ head(ZipCodes)
 head(WashIRS)
 
 myWashIRS <- merge(ZipCodes, WashIRS, by="zip", all=T)
-head(myWashIRS)
+  #Rename Adjusted income:
+myWashIRS$AdjInc <- myWashIRS$`AVG ADJUSTED GROSS INCOME (IN THOUSANDS OF DOLLARS)`
+summary(myWashIRS$AdjInc)
+
 # Clustering and polygons and interactivity 
 
 # Hypothesize benefits of Kriging and photo-negative of vaccine and HPV status
@@ -105,8 +111,12 @@ head(myWashIRS)
 
 
 
-### Overlay maps
 
+################
+### Overlay maps
+################
+
+#Universal Washington base map:
 m <- leaflet(mydf, options = leafletOptions(dragging=TRUE, 
                                             minZoom=6, 
                                             maxZoom=11))%>%
@@ -116,11 +126,13 @@ m <- leaflet(mydf, options = leafletOptions(dragging=TRUE,
     accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
 
 
+#Palettes:
 pal  <- colorNumeric(palette = "RdYlBu", domain =c(0:45))
 pal2 <- colorNumeric(palette = "RdYlBu", domain =c(0:140), reverse = TRUE)
+pal3 <- colorNumeric(palette = "RdYlBu", domain =c(0:15), reverse = TRUE)
 
-myWashIRS$AdjInc <- myWashIRS$`AVG ADJUSTED GROSS INCOME (IN THOUSANDS OF DOLLARS)`
-summary(myWashIRS$AdjInc)
+
+
 MM <- m %>% addPolygons(data = mydf, weight=1, fillOpacity = 0.75,
                         color = pal(mydf$All),
                         label = mydf$NAME,
