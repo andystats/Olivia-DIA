@@ -14,7 +14,7 @@ setwd("C:/Users/wilso/Documents/GitHub/Olivia-DIA")
 
 ## Centralizing in Washington state (square boundaries) 
 ## Note: it is possible to create grids with irregular boundaries, but this is close enough for Wash. state
-bbox(mydf)
+
 
 lat_min = 45.54354
 lat_max = 49.00249
@@ -293,3 +293,32 @@ saveWidget(MMM, file = "C:/Users/wilso/Documents/GitHub/Olivia-DIA/Output/Protot
 #             values = c(0:45))
 # MMM
 # saveWidget(MMM, file = "C:\\Users\\wilso\\Documents\\GitHub\\COVID-19-strategic-feasibility-support\\Outputs\\New York example.html")
+
+
+## Bonus: State-level maps 
+head(prev)
+qpal <- colorQuantile("Reds", prev$positivity, n = 5)
+S <- leaflet(states, options = leafletOptions(dragging=TRUE, 
+                                            minZoom=4, 
+                                            maxZoom=11))%>%
+  setView(-98.35, 39.5, 4) %>%
+  addProviderTiles("MapBox", options = providerTileOptions(
+    id = "mapbox.light",
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+
+SS <- S %>% addPolygons(data = states, weight=.5) %>%
+  addCircleMarkers(lng = prev$Longitude_avg,
+                   lat = prev$Latitude_avg,
+                   label = prev$positivity,
+                   popup = paste("<b>","Positivity =", prev$positivity,"</b>"),
+                   radius = log(prev$n_screened),
+                   stroke = TRUE, fillOpacity = 0.8,
+                   color = qpal(prev$positivity)
+                  ) 
+SS %>% addResetMapButton() %>%
+    addLegend(title = "Positivity quantile (relative standing)", 
+              position = "bottomleft",
+              pal=qpal,
+             values = prev$positivity)
+
+saveWidget(SS, file = "C:/Users/wilso/Documents/GitHub/Olivia-DIA/Output/Prototype US positivity quantiles map v1.1.html")
