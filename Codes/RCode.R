@@ -306,7 +306,7 @@ S <- leaflet(states, options = leafletOptions(dragging=TRUE,
     id = "mapbox.light",
     accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
 
-SS <- S %>% addPolygons(data = states, weight=.5) %>%
+SS <- S %>% addPolygons(data = states, weight=.5, label = states$NAME) %>%
   addCircleMarkers(lng = prev$Longitude_avg,
                    lat = prev$Latitude_avg,
                    label = prev$positivity,
@@ -315,10 +315,10 @@ SS <- S %>% addPolygons(data = states, weight=.5) %>%
                    stroke = TRUE, fillOpacity = 0.8,
                    color = qpal(prev$positivity)
                   ) 
-SS %>% addResetMapButton() %>%
-    addLegend(title = "Positivity quantile (relative standing)", 
+SSS <- SS %>% addResetMapButton() %>%
+  addLegend(title = "Positivity quantile (relative standing)", 
               position = "bottomleft",
               pal=qpal,
              values = prev$positivity)
-
-saveWidget(SS, file = "C:/Users/wilso/Documents/GitHub/Olivia-DIA/Output/Prototype US positivity quantiles map v1.1.html")
+SSS
+saveWidget(SSS, file = "C:/Users/wilso/Documents/GitHub/Olivia-DIA/Output/Prototype US positivity quantiles map v1.1.html")
