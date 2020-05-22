@@ -8,9 +8,9 @@ library(sp)
 #library(maptools)
 
 #MAC AW
-#setwd("/Users/andywilson1/Documents/GitHub/Olivia-DIA")
+setwd("/Users/andywilson1/Documents/GitHub/Olivia-DIA")
 #PC AW
-setwd("C:/Users/wilso/Documents/GitHub/Olivia-DIA")
+#setwd("C:/Users/wilso/Documents/GitHub/Olivia-DIA")
 
 ## Centralizing in Washington state (square boundaries) 
 ## Note: it is possible to create grids with irregular boundaries, but this is close enough for Wash. state
@@ -42,7 +42,10 @@ counties<- geojsonio::geojson_read("us_county_polygons.json", what = "sp")
 
 
 # Maps of the US (State level)
+US2017<- read.csv(file = "HPV Data/HPV vaccine/HPV_vax_by_state.csv", na.strings = c("", "NA"), fileEncoding="UTF-8-BOM") %>%
+  drop_na(HPV)
 
+mydfz<- sp::merge(states, US2017 , by="NAME", all=T)
 
 
 
@@ -140,12 +143,12 @@ grd_pts <- SpatialPoints(coords = grd,
 grd_pts_in <- grd_pts[mydf2, ]
 
 gdf <- as.data.frame(grd_pts_in)
-
+head(gdf)
 library(ggthemes)
 
 pdf(file = "Output/Washington grid for Kriging2.pdf", width=10)
 ggplot(gdf) +
-  geom_point(aes(x=x, y=y))+
+  geom_point(aes(x=x1, y=x2))+
   theme_few()
 dev.off()
 
@@ -159,7 +162,7 @@ head(pct.kriged.data)
 
 pdf(file = "Output/Predicted vaccination rate.pdf", width=10)
 pct.kriged.data %>%
-ggplot(aes(x=x, y=y)) +
+ggplot(aes(x=x1, y=x2)) +
   geom_tile(aes(fill=var1.pred)) + coord_equal() +
   scale_fill_gradient("Predicted", low="red", high ="blue") +
   theme_void()
@@ -167,7 +170,7 @@ dev.off()
 
 pdf(file = "Output/Variance vaccination rate.pdf", width=10)
 pct.kriged.data %>%
-  ggplot(aes(x=x, y=y)) +
+  ggplot(aes(x=x1, y=x2)) +
   geom_tile(aes(fill=var1.var)) + coord_equal() +
   scale_fill_gradient("Variance", low="blue", high ="red") +
   theme_void()
@@ -190,20 +193,20 @@ m <- leaflet(mydf, options = leafletOptions(dragging=TRUE,
 
 
 #Palettes:
-pal  <- colorNumeric(palette = "RdYlBu", domain =c(0:45))
-pal2 <- colorNumeric(palette = "RdYlBu", domain =c(0:140), reverse = TRUE)
-pal3 <- colorNumeric(palette = "RdYlBu", domain =c(0:15), reverse = TRUE)
+pal  <- colorNumeric(palette = "Reds", domain =c(0:45))
+pal2 <- colorNumeric(palette = "Blues", domain =c(0:140), reverse = TRUE)
+pal3 <- colorNumeric(palette = "Blues", domain =c(0:15), reverse = TRUE)
 pal4 <- colorNumeric(palette = "Blues", domain =c(1:50))
 
 
-MM <- m %>% addPolygons(data = mydf, weight=1, fillOpacity = 0.45,
+MM <- m %>% addPolygons(data = mydf, weight=1, fillOpacity = 0.25,
                         color = pal(mydf$All),
                         label = mydf$NAME,
                         popup = paste0("Percent HPV vaccine UtD: ", 
                                        mydf$All, "%"),
                         labelOptions = labelOptions(textOnly = FALSE),
                         group = "County HPV vaccination") %>%
-  addPolygons(data = mydf2, weight=1, fillOpacity = 0.45,
+  addPolygons(data = mydf2, weight=1, fillOpacity = 0.25,
               color = pal3(Percent_uninsured$PCTUI_PTnum),
               label = mydf2$NAME,
               popup = paste0("Percent Uninsured: ", 
@@ -322,3 +325,48 @@ SSS <- SS %>% addResetMapButton() %>%
              values = prev$positivity)
 SSS
 saveWidget(SSS, file = "C:/Users/wilso/Documents/GitHub/Olivia-DIA/Output/Prototype US positivity quantiles map v1.1.html")
+
+## States
+z <- leaflet(mydfz, options = leafletOptions(dragging=TRUE, 
+                                              minZoom=5, 
+                                              maxZoom=11))%>%
+  setView(-98.35, 39.5, 5) %>%
+  addProviderTiles("MapBox", options = providerTileOptions(
+    id = "mapbox.light",
+    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
+
+
+#Palettes:
+palz1  <- colorNumeric(palette = "Blues", domain =c(45:95))
+palz2  <- colorNumeric(palette = "Reds", domain =c(25:80), reverse = TRUE)
+summary(mydfz@data)
+
+ZZ <- z %>% addPolygons(data = mydfz, weight=1, fillOpacity = 0.25,
+                        color = palz1(mydfz$HPV),
+                        label = mydfz$NAME,
+                        popup = paste0("Percent HPV vaccine Initiated: ", 
+                                       mydfz$HPV2, "%"),
+                        labelOptions = labelOptions(textOnly = FALSE),
+                        group = "HPV 1+") %>%
+  addPolygons(data = mydfz, weight=1, fillOpacity = 0.25,
+              color = palz2(mydfz$HPV.UTD),
+              label = mydfz$NAME,
+              popup = paste0("Percent HPV vaccine UtD ", 
+                             mydfz$HPV.UTD2 , "%"),
+              labelOptions = labelOptions(textOnly = FALSE),
+              group = "HPV Vaccine UtD") %>%
+  addLayersControl(overlayGroups = c("HPV 1+", "HPV Vaccine UtD"))
+
+ZZZ <- ZZ %>% addResetMapButton() %>%
+  addLegend(title = "Vaccination Initiated", 
+            position = "bottomleft",
+            pal=palz1,
+            values = c(45:95)) %>%
+  addLegend(title = "Vaccination UtD", 
+            position = "bottomright",
+            pal=palz2,
+            values = c(25:80)) 
+ZZZ
+
+saveWidget(ZZZ, file = "/Users/andywilson1/Documents/GitHub/Olivia-DIA/Output/NIS Teen Vax map.html")
+
