@@ -65,12 +65,12 @@ WV2018 <- WV2018 %>%
 
 mydf<- sp::merge(Washington, WV2018 , by="NAME", all=T)
 
-pdf(file = "Output/Washington bounding box for Kriging.pdf")
-plot(mydf, col="lightblue", lwd=2, main = "Washington State (US)
-     grid for Kriging")
-abline(h=c(lat_max, lat_min), lty=2, lwd=3, col="blue")
-abline(v=c(lon_max, lon_min), lty=2, lwd=3, col="blue")
-dev.off()
+# pdf(file = "Output/Washington bounding box for Kriging.pdf")
+# plot(mydf, col="lightblue", lwd=2, main = "Washington State (US)
+#      grid for Kriging")
+# abline(h=c(lat_max, lat_min), lty=2, lwd=3, col="blue")
+# abline(v=c(lon_max, lon_min), lty=2, lwd=3, col="blue")
+# dev.off()
 
 Percent_uninsured_from_census<- read.csv(file = "Percent_uninsured_from_census.csv", na.strings = c("", "NA"))
 head(Percent_uninsured_from_census)
@@ -331,10 +331,8 @@ z <- leaflet(mydfz, options = leafletOptions(dragging=TRUE,
                                               minZoom=4, 
                                               maxZoom=11))%>%
   setView(-98.35, 39.5, 5) %>%
-  addProviderTiles("MapBox", options = providerTileOptions(
-    id = "mapbox.light",
-    accessToken = Sys.getenv('MAPBOX_ACCESS_TOKEN')))
-
+  addProviderTiles("Esri.WorldGrayCanvas")
+z
 
 #Palettes:
 palz1  <- colorNumeric(palette = "Blues", domain =c(45:95))
