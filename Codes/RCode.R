@@ -328,7 +328,7 @@ saveWidget(SSS, file = "C:/Users/wilso/Documents/GitHub/Olivia-DIA/Output/Protot
 
 ## States
 z <- leaflet(mydfz, options = leafletOptions(dragging=TRUE, 
-                                              minZoom=5, 
+                                              minZoom=4, 
                                               maxZoom=11))%>%
   setView(-98.35, 39.5, 5) %>%
   addProviderTiles("MapBox", options = providerTileOptions(
@@ -338,11 +338,11 @@ z <- leaflet(mydfz, options = leafletOptions(dragging=TRUE,
 
 #Palettes:
 palz1  <- colorNumeric(palette = "Blues", domain =c(45:95))
-palz2  <- colorNumeric(palette = "Reds", domain =c(25:80), reverse = TRUE)
+palz2  <- colorNumeric(palette = "YlOrRd", domain =c(25:80), reverse = TRUE)
 summary(mydfz@data)
 
-ZZ <- z %>% addPolygons(data = mydfz, weight=1, fillOpacity = 0.25,
-                        color = palz1(mydfz$HPV),
+ZZ <- z %>% addPolygons(data = mydfz, weight=1, fillOpacity = (2*(mydfz$HPV-50)/100), stroke = FALSE,
+                        color = "#3182bd",
                         label = mydfz$NAME,
                         popup = paste0("Percent HPV vaccine Initiated: ", 
                                        mydfz$HPV2, "%"),
